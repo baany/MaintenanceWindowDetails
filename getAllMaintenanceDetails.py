@@ -8,29 +8,33 @@ from datetime import datetime
 from datetime import date
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-def apiCall():
-    url = 'XXXX'
+def apiCall(Url):
+    url = Url
     headers = {'content-type': 'application/json'}
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     r = requests.get(url, verify=False, headers=headers, auth=('XXXX','XXXX'))
     listMaintenance = []
     if (r.status_code == 200):
         resp = json.loads(r.content.decode('utf-8'))
-        #print (len(resp['windows']))
-        #return (resp['windows'][2]['id'])
-        for i in range(len(resp['windows'])):
-            listMaintenance.append(resp['windows'][i]['id'])
-            #print (resp['windows'][i])
-        #return(listMaintenance)
-        return (sorted(listMaintenance))
+        return (resp)
     else :
         errorMssg = r.status_code
         return (errorMssg)
-    
+
+def getMaintenanceList():
+    url = 'XXXX'
+    resp = apiCall(url)
+    listMaintenance = []
+    #print (len(resp['windows']))
+    #return (resp['windows'][2]['id'])
+    for i in range(len(resp['windows'])):
+        listMaintenance.append(resp['windows'][i]['id'])
+        #print (resp['windows'][i])
+    #return(listMaintenance)
+    return (sorted(listMaintenance))
 
 def auditFlatFileConsole(workDone):
     currentDatetime = date.today()
-    #fileOpen = open("SelfServiceLogs_"+str(currentDatetime)+'.txt', 'a+')
     fileOpen = open("Console_Moogsoft.txt", 'a+')
     fileOpen.write("#####################################################\r\n")
     fileOpen.write(str(workDone)+"\r\n")
@@ -58,7 +62,7 @@ def getFlag():
     return (0)
 
 def auditMaintenanceConsole():
-    maintenanceList = apiCall()
+    maintenanceList = getMaintenanceList()
     print (maintenanceList)
     lengthListMaintenance = len(maintenanceList)
     flag = getFlag()
@@ -67,20 +71,12 @@ def auditMaintenanceConsole():
     #print (maintenanceList[lengthListMaintenance-1])
     urlCheckMaintenanceBase = "XXXX"
     urlCheckMaintenanceTail = "XXXX"
-    #return ()
     for item in maintenanceList:
         if (item > flag):
             flag = item
             url = urlCheckMaintenanceBase+str(item)+urlCheckMaintenanceTail
-            headers = {'content-type': 'application/json'}
-            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-            r = requests.get(url, verify=False, headers=headers, auth=('XXXX','XXXX'))
-            if (r.status_code == 200):
-                resp = json.loads(r.content.decode('utf-8'))
-                auditFlatFileConsole(resp)
-            else :
-                errorMssg = r.status_code
-                print (errorMssg)
+            resp = apiCall(url)
+            auditFlatFileConsole(resp)
         else :
             pass
     updateFlag(flag)
