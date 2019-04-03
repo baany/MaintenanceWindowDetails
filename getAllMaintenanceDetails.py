@@ -133,4 +133,5 @@ def windowParser():
     print ("Last Updated Time", lastUpdatedTimeFormatted)
     return ()
 
+#auditMaintenanceConsole()
 windowParser()
