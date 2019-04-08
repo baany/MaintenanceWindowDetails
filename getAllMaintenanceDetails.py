@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import json
 import os
@@ -19,18 +19,14 @@ def getMaintenanceList():
     resp = apiCall(url)
     listMaintenance = []
     #print (len(resp['windows']))
-    #return (resp['windows'][2]['id'])
     for i in range(len(resp['windows'])):
         listMaintenance.append(resp['windows'][i]['id'])
-        #print (resp['windows'][i])
     #return(listMaintenance)
     return (sorted(listMaintenance))
 
 def auditFlatFileConsole(workDone):
     currentDatetime = date.today()
-    #fileOpen = open("SelfServiceLogs_"+str(currentDatetime)+'.txt', 'a+')
     fileOpen = open("Console_Moogsoft.txt", 'a+')
-    fileOpen.write("#####################################################\r\n")
     fileOpen.write(str(workDone)+"\r\n")
     fileOpen.close()
 
@@ -38,11 +34,6 @@ def updateFlag(value):
     with open('flagMaintenanceID', 'wb') as f:
         flag = pickle.dump(value, f)
     return ()
-
-##def getFlag():
-##    with open('flagMaintenanceID', 'rb') as f:
-##        flag = pickle.load(f)
-##    return (flag)
 
 def getFlag():
     if os.path.isfile('flagMaintenanceID'):
@@ -54,29 +45,6 @@ def getFlag():
     with open('flagMaintenanceID', 'wb') as f:
         pickle.dump(0, f)
     return (0)
-
-def auditMaintenanceConsole():
-    maintenanceList = getMaintenanceList()
-    print (maintenanceList)
-    lengthListMaintenance = len(maintenanceList)
-    flag = getFlag()
-    print (flag)
-    #print (lengthListMaintenance)
-    #print (maintenanceList[lengthListMaintenance-1])
-    urlMaintenanceBase = "XXXX"
-    urlMaintenanceTail = "XXXX"
-    for item in maintenanceList:
-        if (item > flag):
-            flag = item
-            url = urlMaintenanceBase+str(item)+urlMaintenanceTail
-            resp = apiCall(url)
-            auditFlatFileConsole(resp)
-        else :
-            pass
-    updateFlag(flag)
-    return ()
-
-#auditMaintenanceConsole()
 
 def extractValues(jsonObj, key):
     """Pull all values of specified key from nested JSON."""
@@ -93,9 +61,58 @@ def extractValues(jsonObj, key):
             for item in jsonObj:
                 extract(item, resultList, key)
         return (resultList)
-
     result = extract(jsonObj, resultList, key)
     return (result)
+
+def auditMaintenanceConsole():
+    maintenanceList = getMaintenanceList()
+    print (maintenanceList)
+    lengthListMaintenance = len(maintenanceList)
+    flag = getFlag()
+    print (flag)
+    urlMaintenanceBase = "XXXX"
+    urlMaintenanceTail = "XXXX"
+    for item in maintenanceList:
+        if (item > flag):
+            flag = item
+            url = urlMaintenanceBase+str(item)+urlMaintenanceTail
+            resp = apiCall(url)
+            auditFlatFileConsole(resp)
+            hostList = []
+            maintenanceWindowDetails = {}
+            nameWindow = resp['windows'][0]['name']
+            valueList = extractValues(json.loads(resp['windows'][0]['filter']), 'value')
+            columnList = extractValues(json.loads(resp['windows'][0]['filter']), 'column')
+            windowDurationSeconds = resp['windows'][0]['duration']
+            windowDuration = time.strftime("%H:%M:%S", time.gmtime(windowDurationSeconds))
+            windowID = resp['windows'][0]['id']
+                    ##Time conversion - START##
+            lastUpdatedTime = resp['windows'][0]['last_updated']
+            startTime = resp['windows'][0]['start_date_time']
+            startTimeFormatted = datetime.utcfromtimestamp(int(startTime)).strftime('%Y-%m-%d %H:%M:%S')
+            lastUpdatedTimeFormatted = datetime.utcfromtimestamp(int(lastUpdatedTime)).strftime('%Y-%m-%d %H:%M:%S')
+                    ##Time conversion - END##
+            auditFlatFileConsole("#####################################################\r\n")
+            print ("Name : ", nameWindow)
+            #print (valueList)
+            #print (columnList)
+            for num in range(0,len(valueList)-1):
+                hostList.append(valueList[num])
+            teamName = valueList[len(valueList)-1]
+            print ("Host List :", hostList)
+            print ("Team : ", teamName)
+            print ("Start Time : ", startTimeFormatted)
+            print ("Duration : ", windowDuration)
+            print ("Window ID : ", windowID)
+            print ("Last Updated Time", lastUpdatedTimeFormatted)
+            maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamName, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
+            print (maintenanceWindowDetails)
+            auditFlatFileConsole(maintenanceWindowDetails)
+            auditFlatFileConsole("#####################################################\r\n")
+        else :
+            pass
+    updateFlag(flag)
+    return ()
 
 def windowParser():
     flagVal = getFlag()
@@ -105,8 +122,8 @@ def windowParser():
     resp = apiCall(url)
     print (resp)
     print ('##############################################################')
-    #print (resp['windows'][0]['filter'])
     hostList = []
+    maintenanceWindowDetails = {}
     nameWindow = resp['windows'][0]['name']
     valueList = extractValues(json.loads(resp['windows'][0]['filter']), 'value')
     columnList = extractValues(json.loads(resp['windows'][0]['filter']), 'column')
@@ -131,7 +148,10 @@ def windowParser():
     print ("Duration : ", windowDuration)
     print ("Window ID : ", windowID)
     print ("Last Updated Time", lastUpdatedTimeFormatted)
+    maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamName, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
+    print (maintenanceWindowDetails)
     return ()
 
-#auditMaintenanceConsole()
-windowParser()
+
+auditMaintenanceConsole()
+#windowParser()
