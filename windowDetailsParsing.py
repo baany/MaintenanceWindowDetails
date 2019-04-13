@@ -19,14 +19,17 @@ def getMaintenanceList():
     resp = apiCall(url)
     listMaintenance = []
     #print (len(resp['windows']))
+    #return (resp['windows'][2]['id'])
     for i in range(len(resp['windows'])):
         listMaintenance.append(resp['windows'][i]['id'])
+        #print (resp['windows'][i])
     #return(listMaintenance)
     return (sorted(listMaintenance))
 
 def auditFlatFileConsole(workDone):
     currentDatetime = date.today()
     fileOpen = open("Console_Moogsoft.txt", 'a+')
+    #fileOpen.write("#####################################################\r\n")
     fileOpen.write(str(workDone)+"\r\n")
     fileOpen.close()
 
@@ -34,6 +37,11 @@ def updateFlag(value):
     with open('flagMaintenanceID', 'wb') as f:
         flag = pickle.dump(value, f)
     return ()
+
+##def getFlag():
+##    with open('flagMaintenanceID', 'rb') as f:
+##        flag = pickle.load(f)
+##    return (flag)
 
 def getFlag():
     if os.path.isfile('flagMaintenanceID'):
@@ -61,18 +69,23 @@ def extractValues(jsonObj, key):
             for item in jsonObj:
                 extract(item, resultList, key)
         return (resultList)
+
     result = extract(jsonObj, resultList, key)
     return (result)
 
+def duplicates(valueList,key):
+    return ([i for i, x in enumerate(valueList) if x == key])
+
 def windowParser():
-    flagVal = getFlag()
+    #flagVal = getFlag()
+    flagVal = 814
     urlMaintenanceBase = "XXXX"
     urlMaintenanceTail = "XXXX"
     url = urlMaintenanceBase+str(flagVal)+urlMaintenanceTail
     resp = apiCall(url)
-    print (resp)
+    #print (resp)
     print ('##############################################################')
-    hostList = []
+    #print (resp['windows'][0]['filter'])
     maintenanceWindowDetails = {}
     nameWindow = resp['windows'][0]['name']
     valueList = extractValues(json.loads(resp['windows'][0]['filter']), 'value')
@@ -86,20 +99,65 @@ def windowParser():
     startTimeFormatted = datetime.utcfromtimestamp(int(startTime)).strftime('%Y-%m-%d %H:%M:%S')
     lastUpdatedTimeFormatted = datetime.utcfromtimestamp(int(lastUpdatedTime)).strftime('%Y-%m-%d %H:%M:%S')
             ##Time conversion - END##
+    print (valueList)
+    print (columnList)
+    print ('##############################################################')
+    valueList_Copy = valueList
+    columnList_Copy = columnList
+    hostIndexList = []
+    teamIndexList = []
+    descriptionIndexList = []
+    teamFlag = 0
+    teamNameList = []
+    descriptionList = []
+    hostList = []
+    hostIndexList = duplicates(columnList, 'source')
+    teamIndexList = duplicates(columnList, 'custom_info.Team')
+    descriptionIndexList = duplicates(columnList, 'description')
+##    for item in columnList:
+##        if (item == 'source'):
+##            hostIndex = columnList_Copy.index(item)
+##            hostList.append(valueList_Copy[hostIndex])
+##            columnList_Copy.pop(hostIndex)
+##            valueList_Copy.pop(hostIndex)
+##            #hostIndexList.append(hostIndex)
+##        elif (item == 'description'):
+##            descriptionIndex = columnList_Copy.index(item)
+##            descriptionList.append(valueList_Copy[descriptionIndex])
+##            columnList_Copy.pop(descriptionIndex)
+##            valueList_Copy.pop(descriptionIndex)
+##            #descriptionIndexList.append(descriptionIndex)
+##        elif (item == 'custom_info.Team'):
+##            teamIndex = columnList_Copy.index(item)
+##            teamNameList.append(valueList_Copy[teamIndex])
+##            columnList_Copy.pop(teamIndex)
+##            valueList_Copy.pop(teamIndex)
+##            #teamIndexList.append(teamIndex)
+##        else:
+##            pass
+##    print (teamIndexList)
+##    print (descriptionIndexList)
+##    print (hostIndexList)
+    if (teamIndexList):
+        for item in teamIndexList:
+            teamNameList.append(valueList[item])
+    if (descriptionIndexList):
+        for item in descriptionIndexList:
+            descriptionList.append(valueList[item])
+    if (hostIndexList):
+        for item in hostIndexList:
+            hostList.append(valueList[item])
     print ("Name : ", nameWindow)
-    #print (valueList)
-    #print (columnList)
-    for num in range(0,len(valueList)-1):
-        hostList.append(valueList[num])
-    teamName = valueList[len(valueList)-1]
     print ("Host List :", hostList)
-    print ("Team : ", teamName)
+    print ("Team : ", teamNameList)
+    print ("Description : ", descriptionList)
     print ("Start Time : ", startTimeFormatted)
     print ("Duration : ", windowDuration)
     print ("Window ID : ", windowID)
     print ("Last Updated Time", lastUpdatedTimeFormatted)
-    maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamName, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
+    maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamNameList, "Description":descriptionList, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
     print (maintenanceWindowDetails)
     return ()
 
 windowParser()
+#updateFlag(774)
