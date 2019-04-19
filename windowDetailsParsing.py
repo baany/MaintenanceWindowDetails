@@ -65,14 +65,13 @@ def extractValues(jsonObj, key):
     return (result)
 
 def windowParser():
-    #flagVal = getFlag()
-    flagVal = 814
+    flagVal = getFlag()
+    #flagVal = 814
     urlMaintenanceBase = "XXXX"
     urlMaintenanceTail = "XXXX"
     url = urlMaintenanceBase+str(flagVal)+urlMaintenanceTail
     resp = apiCall(url)
     #print (resp)
-    #print ('##############################################################')
     #print (resp['windows'][0]['filter'])
     maintenanceWindowDetails = {}
     nameWindow = resp['windows'][0]['name']
@@ -99,30 +98,6 @@ def windowParser():
     hostIndexList = duplicates(columnList, 'source')
     teamIndexList = duplicates(columnList, 'custom_info.Team')
     descriptionIndexList = duplicates(columnList, 'description')
-##    for item in columnList:
-##        if (item == 'source'):
-##            hostIndex = columnList_Copy.index(item)
-##            hostList.append(valueList_Copy[hostIndex])
-##            columnList_Copy.pop(hostIndex)
-##            valueList_Copy.pop(hostIndex)
-##            #hostIndexList.append(hostIndex)
-##        elif (item == 'description'):
-##            descriptionIndex = columnList_Copy.index(item)
-##            descriptionList.append(valueList_Copy[descriptionIndex])
-##            columnList_Copy.pop(descriptionIndex)
-##            valueList_Copy.pop(descriptionIndex)
-##            #descriptionIndexList.append(descriptionIndex)
-##        elif (item == 'custom_info.Team'):
-##            teamIndex = columnList_Copy.index(item)
-##            teamNameList.append(valueList_Copy[teamIndex])
-##            columnList_Copy.pop(teamIndex)
-##            valueList_Copy.pop(teamIndex)
-##            #teamIndexList.append(teamIndex)
-##        else:
-##            pass
-##    print (teamIndexList)
-##    print (descriptionIndexList)
-##    print (hostIndexList)
     if (teamIndexList):
         for item in teamIndexList:
             teamNameList.append(valueList[item])
