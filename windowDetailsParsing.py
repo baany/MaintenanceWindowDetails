@@ -19,17 +19,14 @@ def getMaintenanceList():
     resp = apiCall(url)
     listMaintenance = []
     #print (len(resp['windows']))
-    #return (resp['windows'][2]['id'])
     for i in range(len(resp['windows'])):
         listMaintenance.append(resp['windows'][i]['id'])
-        #print (resp['windows'][i])
     #return(listMaintenance)
     return (sorted(listMaintenance))
 
 def auditFlatFileConsole(workDone):
     currentDatetime = date.today()
     fileOpen = open("Console_Moogsoft.txt", 'a+')
-    #fileOpen.write("#####################################################\r\n")
     fileOpen.write(str(workDone)+"\r\n")
     fileOpen.close()
 
@@ -37,11 +34,6 @@ def updateFlag(value):
     with open('flagMaintenanceID', 'wb') as f:
         flag = pickle.dump(value, f)
     return ()
-
-##def getFlag():
-##    with open('flagMaintenanceID', 'rb') as f:
-##        flag = pickle.load(f)
-##    return (flag)
 
 def getFlag():
     if os.path.isfile('flagMaintenanceID'):
@@ -69,12 +61,8 @@ def extractValues(jsonObj, key):
             for item in jsonObj:
                 extract(item, resultList, key)
         return (resultList)
-
     result = extract(jsonObj, resultList, key)
     return (result)
-
-def duplicates(valueList,key):
-    return ([i for i, x in enumerate(valueList) if x == key])
 
 def windowParser():
     #flagVal = getFlag()
@@ -84,7 +72,7 @@ def windowParser():
     url = urlMaintenanceBase+str(flagVal)+urlMaintenanceTail
     resp = apiCall(url)
     #print (resp)
-    print ('##############################################################')
+    #print ('##############################################################')
     #print (resp['windows'][0]['filter'])
     maintenanceWindowDetails = {}
     nameWindow = resp['windows'][0]['name']
@@ -99,15 +87,12 @@ def windowParser():
     startTimeFormatted = datetime.utcfromtimestamp(int(startTime)).strftime('%Y-%m-%d %H:%M:%S')
     lastUpdatedTimeFormatted = datetime.utcfromtimestamp(int(lastUpdatedTime)).strftime('%Y-%m-%d %H:%M:%S')
             ##Time conversion - END##
-    print (valueList)
-    print (columnList)
+    #print (valueList)
+    #print (columnList)
     print ('##############################################################')
-    valueList_Copy = valueList
-    columnList_Copy = columnList
     hostIndexList = []
     teamIndexList = []
     descriptionIndexList = []
-    teamFlag = 0
     teamNameList = []
     descriptionList = []
     hostList = []
@@ -155,9 +140,9 @@ def windowParser():
     print ("Duration : ", windowDuration)
     print ("Window ID : ", windowID)
     print ("Last Updated Time", lastUpdatedTimeFormatted)
+    print ('##############################################################')
     maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamNameList, "Description":descriptionList, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
     print (maintenanceWindowDetails)
     return ()
 
 windowParser()
-#updateFlag(774)

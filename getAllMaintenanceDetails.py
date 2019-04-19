@@ -19,7 +19,6 @@ def getMaintenanceList():
     resp = apiCall(url)
     listMaintenance = []
     #print (len(resp['windows']))
-    #return (resp['windows'][2]['id'])
     for i in range(len(resp['windows'])):
         listMaintenance.append(resp['windows'][i]['id'])
         #print (resp['windows'][i])
@@ -37,11 +36,6 @@ def updateFlag(value):
     with open('flagMaintenanceID', 'wb') as f:
         flag = pickle.dump(value, f)
     return ()
-
-##def getFlag():
-##    with open('flagMaintenanceID', 'rb') as f:
-##        flag = pickle.load(f)
-##    return (flag)
 
 def getFlag():
     if os.path.isfile('flagMaintenanceID'):
@@ -73,8 +67,8 @@ def extractValues(jsonObj, key):
     result = extract(jsonObj, resultList, key)
     return (result)
 
-def duplicates(valueList,key):
-    return ([i for i, x in enumerate(valueList) if x == key])
+def duplicates(columnList,key):
+    return ([i for i, x in enumerate(columnList) if x == key])
 
 def auditMaintenanceConsole():
     maintenanceList = getMaintenanceList()
@@ -109,30 +103,37 @@ def auditMaintenanceConsole():
             auditFlatFileConsole("#####################################################\r\n")
             #print (valueList)
             #print (columnList)
-            teamFlag = 0
-            teamName = ""
-            for item in columnList:
-                if (item == 'custom_info.Team'):
-                    teamFlag = 1
-            if (teamFlag == 1):
-                teamName = valueList[len(valueList)-1]
-                #print ("zzz : "+teamName)
-                for num in range(0,len(valueList)-1):
-                    hostList.append(valueList[num])
-            else:
-                teamName = '(None)'
-                #print ("zzz : "+teamName)
-                for num in range(0,len(valueList)):
-                    hostList.append(valueList[num])
+            hostIndexList = []
+            teamIndexList = []
+            descriptionIndexList = []
+            teamNameList = []
+            descriptionList = []
+            hostList = []
+            hostIndexList = duplicates(columnList, 'source')
+            teamIndexList = duplicates(columnList, 'custom_info.Team')
+            descriptionIndexList = duplicates(columnList, 'description')
+            if (teamIndexList):
+                for item in teamIndexList:
+                    teamNameList.append(valueList[item])
+            if (descriptionIndexList):
+                for item in descriptionIndexList:
+                    descriptionList.append(valueList[item])
+            if (hostIndexList):
+                for item in hostIndexList:
+                    hostList.append(valueList[item])
+            print ('##############################################################')
             print ("Name : ", nameWindow)
             print ("Host List :", hostList)
-            print ("Team : ", teamName)
+            print ("Team : ", teamNameList)
+            print ("Description : ", descriptionList)
             print ("Start Time : ", startTimeFormatted)
             print ("Duration : ", windowDuration)
             print ("Window ID : ", windowID)
             print ("Last Updated Time", lastUpdatedTimeFormatted)
-            maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamName, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
+            print ('##############################################################')
+            maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamNameList, "Description":descriptionList, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
             print (maintenanceWindowDetails)
+            print ('##############################################################')
             auditFlatFileConsole(maintenanceWindowDetails)
             auditFlatFileConsole("#####################################################\r\n")
         else :
@@ -148,7 +149,7 @@ def windowParser():
     url = urlMaintenanceBase+str(flagVal)+urlMaintenanceTail
     resp = apiCall(url)
     #print (resp)
-    print ('##############################################################')
+    #print ('##############################################################')
     #print (resp['windows'][0]['filter'])
     maintenanceWindowDetails = {}
     nameWindow = resp['windows'][0]['name']
@@ -163,15 +164,12 @@ def windowParser():
     startTimeFormatted = datetime.utcfromtimestamp(int(startTime)).strftime('%Y-%m-%d %H:%M:%S')
     lastUpdatedTimeFormatted = datetime.utcfromtimestamp(int(lastUpdatedTime)).strftime('%Y-%m-%d %H:%M:%S')
             ##Time conversion - END##
-    print (valueList)
-    print (columnList)
+    #print (valueList)
+    #print (columnList)
     print ('##############################################################')
-    valueList_Copy = valueList
-    columnList_Copy = columnList
     hostIndexList = []
     teamIndexList = []
     descriptionIndexList = []
-    teamFlag = 0
     teamNameList = []
     descriptionList = []
     hostList = []
@@ -219,11 +217,12 @@ def windowParser():
     print ("Duration : ", windowDuration)
     print ("Window ID : ", windowID)
     print ("Last Updated Time", lastUpdatedTimeFormatted)
+    print ('##############################################################')
     maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamNameList, "Description":descriptionList, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
     print (maintenanceWindowDetails)
     return ()
 
 
-#auditMaintenanceConsole()
-windowParser()
+auditMaintenanceConsole()
+#windowParser()
 #updateFlag(774)
