@@ -2,6 +2,8 @@
 
 import json
 import os
+import subprocess
+import sys
 import ast
 import string
 import requests
@@ -18,17 +20,18 @@ def getMaintenanceList():
     url = 'XXXX'
     resp = apiCall(url)
     listMaintenance = []
-    #print (len(resp['windows']))
+    #return (resp['windows'][2]['id'])
     for i in range(len(resp['windows'])):
         listMaintenance.append(resp['windows'][i]['id'])
-    #return(listMaintenance)
+        #print (resp['windows'][i])
     return (sorted(listMaintenance))
 
 def auditFlatFileConsole(workDone):
     currentDatetime = date.today()
-    fileOpen = open("Console_Moogsoft.txt", 'a+')
+    fileOpen = open("ConsoleDataPush.txt", 'a+')
     fileOpen.write(str(workDone)+"\r\n")
     fileOpen.close()
+    return()
 
 def updateFlag(value):
     with open('flagMaintenanceID', 'wb') as f:
@@ -41,10 +44,10 @@ def getFlag():
             try:
                 return (pickle.load(f))
             except Exception:
-                pass 
+                pass
     with open('flagMaintenanceID', 'wb') as f:
         pickle.dump(0, f)
-    return (0)
+        return (pickle.load(f))
 
 def extractValues(jsonObj, key):
     """Pull all values of specified key from nested JSON."""
@@ -53,7 +56,7 @@ def extractValues(jsonObj, key):
         """Recursively search for values of key in JSON tree."""
         if isinstance(jsonObj, dict):
             for k, v in jsonObj.items():
-                if isinstance(v, (dict, list)):
+                if isinstance(v, dict):
                     extract(v, resultList, key)
                 elif k == key:
                     resultList.append(v)
@@ -61,20 +64,28 @@ def extractValues(jsonObj, key):
             for item in jsonObj:
                 extract(item, resultList, key)
         return (resultList)
+
     result = extract(jsonObj, resultList, key)
     return (result)
 
+def duplicates(columnList,key):
+    return ([i for i, x in enumerate(columnList) if x == key])
+
 def windowParser():
-    flagVal = getFlag()
-    #flagVal = 814
+    #flagVal = getFlag()
+    flagVal = 970
     urlMaintenanceBase = "XXXX"
     urlMaintenanceTail = "XXXX"
     url = urlMaintenanceBase+str(flagVal)+urlMaintenanceTail
     resp = apiCall(url)
-    #print (resp)
+    print (resp)
+    #print ('##############################################################')
     #print (resp['windows'][0]['filter'])
     maintenanceWindowDetails = {}
+    #print (resp['windows'])
     nameWindow = resp['windows'][0]['name']
+    descriptionWindow = resp['windows'][0]['description']
+    updatedBy = resp['windows'][0]['updated_by']
     valueList = extractValues(json.loads(resp['windows'][0]['filter']), 'value')
     columnList = extractValues(json.loads(resp['windows'][0]['filter']), 'column')
     windowDurationSeconds = resp['windows'][0]['duration']
@@ -86,38 +97,61 @@ def windowParser():
     startTimeFormatted = datetime.utcfromtimestamp(int(startTime)).strftime('%Y-%m-%d %H:%M:%S')
     lastUpdatedTimeFormatted = datetime.utcfromtimestamp(int(lastUpdatedTime)).strftime('%Y-%m-%d %H:%M:%S')
             ##Time conversion - END##
-    #print (valueList)
-    #print (columnList)
-    print ('##############################################################')
+    #print ('##############################################################')
+##    print ('##############################################################')
+##    print (valueList)
+##    print (columnList)
+##    print ('##############################################################')
     hostIndexList = []
     teamIndexList = []
-    descriptionIndexList = []
+    textPatternIndexList = []
     teamNameList = []
-    descriptionList = []
+    textPatternList = []
     hostList = []
+    managerList = []
+    agentList = []
     hostIndexList = duplicates(columnList, 'source')
     teamIndexList = duplicates(columnList, 'custom_info.Team')
-    descriptionIndexList = duplicates(columnList, 'description')
+    textPatternIndexList = duplicates(columnList, 'description')
+    managerIndexList = duplicates(columnList, 'manager')
+    agentIndexList = duplicates(columnList, 'agent')
+    #print (teamIndexList)
+    #print (textPatternIndexList)
+    #print (hostIndexList)
+    #print (managerIndexList)
+    #print (agentIndexList)
     if (teamIndexList):
         for item in teamIndexList:
             teamNameList.append(valueList[item])
-    if (descriptionIndexList):
-        for item in descriptionIndexList:
-            descriptionList.append(valueList[item])
+    if (textPatternIndexList):
+        for item in textPatternIndexList:
+            textPatternList.append(valueList[item])
     if (hostIndexList):
         for item in hostIndexList:
             hostList.append(valueList[item])
+    if (managerIndexList):
+        for item in managerIndexList:
+            managerList.append(valueList[item])
+    if (agentIndexList):
+        for item in agentIndexList:
+            agentList.append(valueList[item])
     print ("Name : ", nameWindow)
+    print ("Description : ", descriptionWindow)
+    print ("Updated by : ", updatedBy)
     print ("Host List :", hostList)
     print ("Team : ", teamNameList)
-    print ("Description : ", descriptionList)
+    print ("TextPattern : ", textPatternList)
+    print ("Manager : ", managerList)
+    print ("Agent : ", agentList)
     print ("Start Time : ", startTimeFormatted)
     print ("Duration : ", windowDuration)
     print ("Window ID : ", windowID)
     print ("Last Updated Time", lastUpdatedTimeFormatted)
     print ('##############################################################')
-    maintenanceWindowDetails.update({"Name":nameWindow, "HostList":hostList, "Team":teamNameList, "Description":descriptionList, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted})
+    maintenanceWindowDetails.update({"Name":nameWindow, "Description":descriptionWindow, "HostList":hostList, "Team":teamNameList, "Description":textPatternList, "Manager":managerList, "Agent": agentList, "StartTime":startTimeFormatted, "Duration":windowDuration, "Window ID":windowID, "LastUpdatedTime":lastUpdatedTimeFormatted, "UpdatedBy":updatedBy})
     print (maintenanceWindowDetails)
+    print ('##############################################################')
     return ()
 
+#updateFlag(968)
 windowParser()
